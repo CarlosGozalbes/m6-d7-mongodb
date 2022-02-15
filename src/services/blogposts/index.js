@@ -23,49 +23,82 @@ blogPostsRouter.get("/", async (req, res, next) => {
   }
 });
 
-blogPostsRouter.get("/:userId", async (req, res, next) => {
+blogPostsRouter.get("/:blogPostId", async (req, res, next) => {
   try {
-    const userId = req.params.userId;
+    const blogPostId = req.params.blogPostId;
 
-    const user = await blogPostsModel.findById(userId);
-    if (user) {
-      res.send(user);
+    const blogPost = await blogPostsModel.findById(blogPostId);
+    if (blogPost) {
+      res.send(blogPost);
     } else {
-      next(createHttpError(404, `User with id ${userId} not found!`));
+      next(createHttpError(404, `blogpost with id ${blogPostId} not found!`));
     }
   } catch (error) {
     next(error);
   }
 });
 
-blogPostsRouter.put("/:userId", async (req, res, next) => {
+blogPostsRouter.put("/:blogPostId", async (req, res, next) => {
   try {
-    const userId = req.params.userId;
-    const updatedUser = await blogPostsModel.findByIdAndUpdate(userId, req.body, {
+    const blogPostId = req.params.blogPostId;
+    const updatedblogpost = await blogPostsModel.findByIdAndUpdate(blogPostId, req.body, {
       new: true, // by default findByIdAndUpdate returns the record pre-modification, if you want to get back the newly updated record you should use the option new: true
     });
-    if (updatedUser) {
-      res.send(updatedUser);
+    if (updatedblogpost) {
+      res.send(updatedblogpost);
     } else {
-      next(createHttpError(404, `User with id ${userId} not found!`));
+      next(createHttpError(404, `blogpost with id ${blogPostId} not found!`));
     }
   } catch (error) {
     next(error);
   }
 });
 
-blogPostsRouter.delete("/:userId", async (req, res, next) => {
+blogPostsRouter.delete("/:blogPostId", async (req, res, next) => {
   try {
-    const userId = req.params.userId;
-    const deletedUser = await blogPostsModel.findByIdAndDelete(userId);
-    if (deletedUser) {
+    const blogPostId = req.params.blogPostId;
+    const deletedblogpost = await blogPostsModel.findByIdAndDelete(blogPostId);
+    if (deletedblogpost) {
       res.status(204).send();
     } else {
-      next(createHttpError(404, `User with id ${userId} not found!`));
+      next(createHttpError(404, `blogpost with id ${blogPostId} not found!`));
     }
   } catch (error) {
     next(error);
   }
 });
+
+blogPostsRouter.post(
+  "/blogPostId/cover",
+  multer({
+    storage: new CloudinaryStorage({
+      cloudinary,
+      params: { folder: "netflix" },
+    })
+  }).single("cover"), async (req, res, next) =>{
+      try {
+        const blogPostId = req.params.blogPostId;
+        const updatedblogpost = await blogPostsModel.findByIdAndUpdate(
+          blogPostId,
+          req.body,
+          {
+            new: true, // by default findByIdAndUpdate returns the record pre-modification, if you want to get back the newly updated record you should use the option new: true
+          }
+        );
+        if (updatedblogpost) {
+          res.send(updatedblogpost);
+        } else {
+          next(
+            createHttpError(404, `blogpost with id ${blogPostId} not found!`)
+          );
+        }
+      } catch (error) {
+        next(error);
+      }
+  }
+);
+
+
+
 
 export default blogPostsRouter;

@@ -3,21 +3,25 @@
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
+  "type": "module",
   "dependencies": {
+    "cloudinary": "^1.28.1",
     "cors": "^2.8.5",
     "express": "^4.17.2",
     "express-list-endpoints": "^6.0.0",
     "http-errors": "^2.0.0",
     "init": "^0.1.2",
     "mongodb": "^4.3.1",
-    "mongoose": "^6.2.1"
+    "mongoose": "^6.2.1",
+    "multer-storage-cloudinary": "^4.0.0"
   },
   "devDependencies": {
     "dotenv": "^16.0.0",
     "nodemon": "^2.0.15"
   },
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "dev": "nodemon -r dotenv/config ./src/server.js"
   },
   "repository": {
     "type": "git",
