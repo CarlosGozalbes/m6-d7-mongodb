@@ -88,8 +88,9 @@ blogPostsRouter.post(
         const blogPostId = req.params.blogPostId;
         const updatedBlogPost = await blogPostsModel.findByIdAndUpdate(
           blogPostId,
-          req.body,
+          {cover: req.file.path},/*  cover: req.file.path, */
           {
+            /* cover: req.file.path */
             new: true, // by default findByIdAndUpdate returns the record pre-modification, if you want to get back the newly updated record you should use the option new: true
           }
         );
