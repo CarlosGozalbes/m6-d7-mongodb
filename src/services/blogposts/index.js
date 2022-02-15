@@ -1,6 +1,18 @@
 import express from "express";
 import createHttpError from "http-errors";
 import blogPostsModel from "./schema.js";
+import multer from "multer";
+import { v2 as cloudinary } from "cloudinary";
+import { CloudinaryStorage } from "multer-storage-cloudinary";
+
+const cloudinaryStorage = new CloudinaryStorage({
+  cloudinary,
+  params: {
+    folder: "striveBooks",
+  },
+});
+
+
 
 const blogPostsRouter = express.Router();
 
@@ -69,24 +81,20 @@ blogPostsRouter.delete("/:blogPostId", async (req, res, next) => {
 });
 
 blogPostsRouter.post(
-  "/blogPostId/cover",
-  multer({
-    storage: new CloudinaryStorage({
-      cloudinary,
-      params: { folder: "netflix" },
-    })
-  }).single("cover"), async (req, res, next) =>{
+  "/:blogPostId/cover",
+  multer({storage:cloudinaryStorage})
+  .single("cover"), async (req, res, next) =>{
       try {
         const blogPostId = req.params.blogPostId;
-        const updatedblogpost = await blogPostsModel.findByIdAndUpdate(
+        const updatedBlogPost = await blogPostsModel.findByIdAndUpdate(
           blogPostId,
           req.body,
           {
             new: true, // by default findByIdAndUpdate returns the record pre-modification, if you want to get back the newly updated record you should use the option new: true
           }
         );
-        if (updatedblogpost) {
-          res.send(updatedblogpost);
+        if (updatedBlogPost) {
+          res.send(updatedBlogPost);
         } else {
           next(
             createHttpError(404, `blogpost with id ${blogPostId} not found!`)

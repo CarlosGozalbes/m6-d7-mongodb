@@ -7,9 +7,16 @@ const blogpostSchema = new Schema(
     category: { type: String, required: true },
     title: { type: String, required: true },
     cover: { type: String, required: false },
-    readtime: { value: {type: Number}, unit: "minute", required: false },
-    author: { name: {type: String, required: true}, avatar: { type: String, required: false }},
-    content: { type: String, minLength: 100, required: true},
+    readtime: {
+      value: { type: Number },
+      unit: { type: String },
+      required: false,
+    },
+    author: {
+      name: { type: String, required: false },
+      avatar: { type: String, required: false },
+    },
+    content: { type: String, minLength: 100, required: true },
   },
   {
     timestamps: true, // adds and manages automatically createdAt and updatedAt fields
