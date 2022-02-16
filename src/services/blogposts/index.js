@@ -5,6 +5,7 @@ import multer from "multer";
 import { v2 as cloudinary } from "cloudinary";
 import { CloudinaryStorage } from "multer-storage-cloudinary";
 
+
 const cloudinaryStorage = new CloudinaryStorage({
   cloudinary,
   params: {
@@ -28,8 +29,19 @@ blogPostsRouter.post("/", async (req, res, next) => {
 
 blogPostsRouter.get("/", async (req, res, next) => {
   try {
-    const blogPosts = await blogPostsModel.find();
-    res.send(blogPosts);
+    const mongoQuery = q2m(req.query)
+    const total = await blogPostsModel.countDocuments(mongoQuery.criteria)
+    const blogPosts = await blogPostsModel
+      .find(mongoQuery.criteria)
+      .limit(mongoQuery.options.limit)
+      .skip(mongoQuery.options.skip)
+      .sort(mongoQuery.options.sort);
+    res.send({
+      links: mongoQuery.links("/blogPosts", total),
+      total,
+      totalPages: Math.ceil( total / mongoQuery.options.limit),
+      blogPosts
+    });
   } catch (error) {
     next(error);
   }
@@ -107,7 +119,114 @@ blogPostsRouter.post(
   }
 );
 
+blogPostsRouter.post("/:blogPostId/comments", async (req, res, next) => {
+  try {
+    const updatedBlogPost = await blogPostsModel.findByIdAndUpdate(
+      req.params.blogPostId,
+      { $push: {comments: req.body}},
+      {new:true}
+    )
+    if (updatedBlogPost) {
+      res.send(updatedBlogPost);
+    } else {
+      next(createHttpError(404, `blogpost with id ${blogPostId} not found!`));
+    }
+  } catch (error) {
+    
+  }
+}); 
 
+blogPostsRouter.get("/:blogPostId/comments", async ( req, res, next) => {
+  try {
+    const blogPost = await blogPostsModel.findById(req.params.blogPostId)
+    if (blogPost) {
+      res.send(blogPost.comments)
+    } else {
+      next(createHttpError(404, `Blogpost with Id ${req.params.blogPostId} not found!`));
+    }
+  } catch (error) {
+    next(error);
+  }
+});
+
+blogPostsRouter.get("/:blogPostId/comments/:commentId", async (req, res, next) => {
+  try {
+    const blogPost = await blogPostsModel.findById(req.params.blogPostId);
+    const comment = await blogPost.findById(req.params.commentId)
+    if (comment) {
+      res.send(comment);
+    } else {
+      next(
+        createHttpError(
+          404,
+          `Blogpost with Id ${req.params.blogPostId} not found!`
+        )
+      );
+    }
+  } catch (error) {
+    next(error);
+  }
+});
+
+blogPostsRouter.put(
+  "/:blogPostId/comments/:commentId",
+  async (req, res, next) => {
+    try {
+      const blogPost = await blogPostsModel.findById(req.params.blogPostId); // user is a MONGOOSE DOCUMENT, it is NOT A PLAIN OBJECT
+      if (blogPost) {
+        const index = blogPost.comments.findIndex(
+          (comment) => comment._id.toString() === req.params.commentId
+        );
+
+        if (index !== -1) {
+          // we can modify user.purchaseHistory[index] element with what comes from request body
+          blogPost.comments[index] = {
+            ...blogPost.comments[index].toObject(), // DO NOT FORGET .toObject() when spreading
+            ...req.body,
+          };
+
+          await blogPost.save(); // since user is a MONGOOSE DOCUMENT I can use some of his special powers like .save() method
+          res.send(blogPost);
+        } else {
+          next(
+            createHttpError(404, `comment with id ${req.params.commentId} not found!`)
+          );
+        }
+      } else {
+        next(
+          createHttpError(404, `blogpost with id ${req.params.blogPostId} not found!`)
+        );
+      }
+    } catch (error) {
+      next(error);
+    }
+  }
+); // modify single item from purchase history of a specific user
+
+blogPostsRouter.delete(
+  "/:blogPostId/comments/:commentId",
+  async (req, res, next) => {
+    try {
+      const modifiedBlogPost = await blogPostsModel.findByIdAndUpdate(
+        req.params.blogPostId, //WHO
+        { $pull: { comments: { _id: req.params.commentId } } }, // HOW
+        { new: true } // OPTIONS
+      );
+      if (modifiedBlogPost) {
+        res.send(modifiedBlogPost);
+      } else {
+        next(
+          createHttpError(
+            404,
+            `Blogpost with Id ${req.params.blogPostId} not found!`
+          )
+        );
+      }
+    } catch (error) {
+      next(error);
+    }
+  }
+); 
 
 
 export default blogPostsRouter;
