@@ -29,10 +29,7 @@ const blogpostSchema = new Schema(
       unit: { type: String },
       required: false,
     },
-    author: {
-      name: { type: String, required: false },
-      avatar: { type: String, required: false },
-    },
+    author: [{ type: Schema.Types.ObjectId, ref: "Author" }],
     content: { type: String, minLength: 100, required: true },
     comments: [commentSchemma],
   },

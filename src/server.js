@@ -9,6 +9,7 @@ import {
   genericErrorHandler,
 } from "./errorHandlers.js";
 import blogPostsRouter from "./services/blogPosts/index.js";
+import authorsRouter from "./services/authors/index.js";
 
 const server = express();
 const port = process.env.PORT || 3001;
@@ -21,6 +22,7 @@ server.use(express.json());
 
 
 server.use("/blogPosts", blogPostsRouter);
+server.use("/authors", authorsRouter);
 
 server.use(badRequestHandler);
 server.use(unauthorizedHandler);
