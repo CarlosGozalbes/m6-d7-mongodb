@@ -17,9 +17,9 @@ const cloudinaryStorage = new CloudinaryStorage({
 
 const blogPostsRouter = express.Router();
 
-blogPostsRouter.post("/", async (req, res, next) => {
+blogPostsRouter.post("/",basicAuthMiddleware, async (req, res, next) => {
   try {
-    const newBlogPost = new blogPostsModel(req.body); 
+    const newBlogPost = new blogPostsModel({...req.body, author:[req.author._id]}); 
     const { _id } = await newBlogPost.save(); 
     res.status(201).send({ _id });
   } catch (error) {
@@ -62,14 +62,13 @@ blogPostsRouter.get("/:blogPostId", async (req, res, next) => {
   }
 });
 
-blogPostsRouter.put("/:blogPostId", async (req, res, next) => {
+blogPostsRouter.put("/:blogPostId", basicAuthMiddleware, async (req, res, next) => {
   try {
     const blogPostId = req.params.blogPostId;
-    const updatedblogpost = await blogPostsModel.findByIdAndUpdate(blogPostId, req.body, {
-      new: true, // by default findByIdAndUpdate returns the record pre-modification, if you want to get back the newly updated record you should use the option new: true
-    });
+    const updatedblogpost = await blogPostsModel.findOne({_id:blogPostId,author:{$in:[req.author._id]}});
     if (updatedblogpost) {
-      res.send(updatedblogpost);
+      await updatedblogpost.update(req.body)
+      res.send(204).send();
     } else {
       next(createHttpError(404, `blogpost with id ${blogPostId} not found!`));
     }
@@ -78,7 +77,7 @@ blogPostsRouter.put("/:blogPostId", async (req, res, next) => {
   }
 });
 
-blogPostsRouter.delete("/:blogPostId", async (req, res, next) => {
+blogPostsRouter.delete("/:blogPostId",basicAuthMiddleware, async (req, res, next) => {
   try {
     const blogPostId = req.params.blogPostId;
     const deletedblogpost = await blogPostsModel.findByIdAndDelete(blogPostId);
@@ -229,13 +228,13 @@ blogPostsRouter.delete(
 ); 
 
 
-blogPostsRouter.get(
+/* blogPostsRouter.get(
   "/me/stories",
   basicAuthMiddleware,
   async (req, res, next) => {
     try {
       const blogPostsFromAuthor = await req.user.populate({
-        path: "BlogPosts",
+        path: "Author",
         select: "title",
       });
       res.send(blogPostsFromAuthor);
@@ -244,6 +243,6 @@ blogPostsRouter.get(
     }
   }
 );
-
+ */
 
 export default blogPostsRouter;

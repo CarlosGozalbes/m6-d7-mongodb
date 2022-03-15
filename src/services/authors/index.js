@@ -17,17 +17,14 @@ const cloudinaryStorage = new CloudinaryStorage({
 
 const authorsRouter = express.Router();
 
-/* authorsRouter.get("/me/stories", basicAuthMiddleware, async (req, res, next) => {
+ authorsRouter.get("/me", basicAuthMiddleware, async (req, res, next) => {
   try {
-    const authorWithBlogPosts = await (req.user).populate({
-      path: "BlogPosts",
-      select: "title",
-    });
-    res.send(authorWithBlogPosts);
+   
+    res.send(req.author);
   } catch (error) {
     next(error);
   }
-}); */
+}); 
 
 
 
@@ -156,5 +153,22 @@ authorsRouter.post(
     }
   }
 );
+
+authorsRouter.post("/login", async (req,res,next) => {
+  try {
+    const {email,password} = req.body
+    const matching = await AuthorsModel.checkCredentials(email,password)
+    if (matching) {
+      const token = Buffer.from(`${email}:${password}`).toString("base64")
+      res.status(201).send({token})
+    }
+    else{
+      res.status(401).send("go away!!")
+    }
+  } catch (error) {
+    
+  }
+})
+
 
 export default authorsRouter;
