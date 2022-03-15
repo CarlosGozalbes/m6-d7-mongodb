@@ -4,8 +4,8 @@ import blogPostsModel from "./schema.js";
 import multer from "multer";
 import { v2 as cloudinary } from "cloudinary";
 import { CloudinaryStorage } from "multer-storage-cloudinary";
-
-
+import q2m from "query-to-mongo";
+import { basicAuthMiddleware } from "../../auth/basic.js";
 const cloudinaryStorage = new CloudinaryStorage({
   cloudinary,
   params: {
@@ -227,6 +227,23 @@ blogPostsRouter.delete(
     }
   }
 ); 
+
+
+blogPostsRouter.get(
+  "/me/stories",
+  basicAuthMiddleware,
+  async (req, res, next) => {
+    try {
+      const blogPostsFromAuthor = await req.user.populate({
+        path: "BlogPosts",
+        select: "title",
+      });
+      res.send(blogPostsFromAuthor);
+    } catch (error) {
+      next(error);
+    }
+  }
+);
 
 
 export default blogPostsRouter;

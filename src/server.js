@@ -6,7 +6,7 @@ import {
   badRequestHandler,
   unauthorizedHandler,
   notFoundHandler,
-  genericErrorHandler,
+  genericErrorHandler,forbiddenHandler
 } from "./errorHandlers.js";
 import blogPostsRouter from "./services/blogPosts/index.js";
 import authorsRouter from "./services/authors/index.js";
@@ -28,7 +28,7 @@ server.use(badRequestHandler);
 server.use(unauthorizedHandler);
 server.use(notFoundHandler);
 server.use(genericErrorHandler);
-
+server.use(forbiddenHandler);
 mongoose.connect(process.env.MONGO_CONNECTION);
 
 mongoose.connection.on("connected", () => {
