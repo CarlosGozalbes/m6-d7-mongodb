@@ -228,21 +228,4 @@ blogPostsRouter.delete(
 ); 
 
 
-/* blogPostsRouter.get(
-  "/me/stories",
-  basicAuthMiddleware,
-  async (req, res, next) => {
-    try {
-      const blogPostsFromAuthor = await req.user.populate({
-        path: "Author",
-        select: "title",
-      });
-      res.send(blogPostsFromAuthor);
-    } catch (error) {
-      next(error);
-    }
-  }
-);
- */
-
 export default blogPostsRouter;

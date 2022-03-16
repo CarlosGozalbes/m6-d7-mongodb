@@ -7,6 +7,10 @@ import { CloudinaryStorage } from "multer-storage-cloudinary";
 import q2m from "query-to-mongo";
 import { basicAuthMiddleware } from "../../auth/basic.js";
 import { adminOnlyMiddleware } from "../../auth/admin.js";
+import mongoose from "mongoose";
+
+let blogPost = mongoose.model("BlogPost");
+
 
 const cloudinaryStorage = new CloudinaryStorage({
   cloudinary,
@@ -170,5 +174,20 @@ authorsRouter.post("/login", async (req,res,next) => {
   }
 })
 
+authorsRouter.get(
+  "/me/stories",
+  basicAuthMiddleware,
+  async (req, res, next) => {
+    try {
+      const posts = await blogPost.find({
+        author: req.author._id.toString(),
+      });
+
+      res.status(200).send(posts);
+    } catch (error) {
+      next(error);
+    }
+  }
+);
 
 export default authorsRouter;
