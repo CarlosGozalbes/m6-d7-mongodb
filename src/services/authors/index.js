@@ -7,10 +7,11 @@ import { CloudinaryStorage } from "multer-storage-cloudinary";
 import q2m from "query-to-mongo";
 import { basicAuthMiddleware } from "../../auth/basic.js";
 import { adminOnlyMiddleware } from "../../auth/admin.js";
+import { authenticateAuthor } from "../../auth/tools.js";
+import { JWTAuthMiddleware } from "../../auth/token.js";
 import mongoose from "mongoose";
 
 let blogPost = mongoose.model("BlogPost");
-
 
 const cloudinaryStorage = new CloudinaryStorage({
   cloudinary,
@@ -21,19 +22,44 @@ const cloudinaryStorage = new CloudinaryStorage({
 
 const authorsRouter = express.Router();
 
- authorsRouter.get("/me", basicAuthMiddleware, async (req, res, next) => {
+authorsRouter.get(
+  "/me",
+  /* basicAuthMiddleware */ JWTAuthMiddleware,
+  async (req, res, next) => {
+    try {
+      const author = await AuthorsModel.findById(req.author._id);
+      res.send(author);
+    } catch (error) {
+      next(error);
+    }
+  }
+);
+
+authorsRouter.put("/me", JWTAuthMiddleware, async (req, res, next) => {
   try {
-   
-    res.send(req.author);
+    const author = await AuthorsModel.findByIdAndUpdate(
+      req.author._id,
+      req.body,
+      {
+        new: true,
+      }
+    );
+    res.send(author);
   } catch (error) {
     next(error);
   }
-}); 
+});
 
+authorsRouter.delete("/me", JWTAuthMiddleware, async (req, res, next) => {
+  try {
+    await AuthorsModel.findByIdAndDelete(req.author._id);
+    res.send();
+  } catch (error) {
+    next(error);
+  }
+});
 
-
-
-authorsRouter.post("/", async (req, res, next) => {
+authorsRouter.post("/register", async (req, res, next) => {
   try {
     const newAuthor = new AuthorsModel(req.body);
     const { _id } = await newAuthor.save();
@@ -45,6 +71,7 @@ authorsRouter.post("/", async (req, res, next) => {
 
 authorsRouter.get(
   "/",
+  JWTAuthMiddleware,
   /* basicAuthMiddleware,
   adminOnlyMiddleware, */
   async (req, res, next) => {
@@ -67,32 +94,27 @@ authorsRouter.get(
   }
 );
 
-authorsRouter.get(
-  "/:authorId",
-  basicAuthMiddleware,
-  adminOnlyMiddleware,
-  async (req, res, next) => {
-    try {
-      const authorId = req.params.authorId;
-      const author = await AuthorsModel.findById(authorId).populate({
-        path: "BlogPosts",
-        select: "title",
-      });
-      /* const author = await AuthorsModel.findById(authorId); */
-      if (author) {
-        res.send(author);
-      } else {
-        next(createHttpError(404, `Author with id ${authorId} not found`));
-      }
-    } catch (error) {
-      next(error);
+authorsRouter.get("/:authorId", JWTAuthMiddleware, async (req, res, next) => {
+  try {
+    const authorId = req.params.authorId;
+    const author = await AuthorsModel.findById(authorId).populate({
+      path: "BlogPosts",
+      select: "title",
+    });
+    /* const author = await AuthorsModel.findById(authorId); */
+    if (author) {
+      res.send(author);
+    } else {
+      next(createHttpError(404, `Author with id ${authorId} not found`));
     }
+  } catch (error) {
+    next(error);
   }
-);
+});
 
 authorsRouter.put(
   "/:authorId",
-  basicAuthMiddleware,
+  JWTAuthMiddleware,
   adminOnlyMiddleware,
   async (req, res, next) => {
     try {
@@ -117,7 +139,7 @@ authorsRouter.put(
 
 authorsRouter.delete(
   "/:authorId",
-  basicAuthMiddleware,
+  JWTAuthMiddleware,
   adminOnlyMiddleware,
   async (req, res, next) => {
     try {
@@ -142,7 +164,7 @@ authorsRouter.post(
       const authorId = req.params.authorId;
       const updatedAuthor = await AuthorsModel.findByIdAndUpdate(
         authorId,
-        { avatar: req.file.path } ,
+        { avatar: req.file.path },
         {
           new: true,
         }
@@ -158,36 +180,34 @@ authorsRouter.post(
   }
 );
 
-authorsRouter.post("/login", async (req,res,next) => {
+authorsRouter.post("/login", async (req, res, next) => {
   try {
-    const {email,password} = req.body
-    const matching = await AuthorsModel.checkCredentials(email,password)
-    if (matching) {
-      const token = Buffer.from(`${email}:${password}`).toString("base64")
-      res.status(201).send({token})
-    }
-    else{
-      res.status(401).send("go away!!")
+    const { email, password } = req.body;
+    const author = await AuthorsModel.checkCredentials(email, password);
+    if (author) {
+      //const token = Buffer.from(`${email}:${password}`).toString("base64")
+      const accessToken = await authenticateAuthor(author);
+      res.status(201).send({ accessToken });
+    } else {
+      res.status(401).send("go away!!");
     }
   } catch (error) {
-    
-  }
-})
+    console.log(error);
 
-authorsRouter.get(
-  "/me/stories",
-  basicAuthMiddleware,
-  async (req, res, next) => {
-    try {
-      const posts = await blogPost.find({
-        author: req.author._id.toString(),
-      });
-
-      res.status(200).send(posts);
-    } catch (error) {
-      next(error);
-    }
+    next(error);
   }
-);
+});
+
+authorsRouter.get("/me/stories", JWTAuthMiddleware, async (req, res, next) => {
+  try {
+    const posts = await blogPost.find({
+      author: req.author._id.toString(),
+    });
+
+    res.status(200).send(posts);
+  } catch (error) {
+    next(error);
+  }
+});
 
 export default authorsRouter;

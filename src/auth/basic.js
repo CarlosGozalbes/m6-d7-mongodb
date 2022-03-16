@@ -19,7 +19,7 @@ export const basicAuthMiddleware = async (req, res, next) => {
     // 3. Once we obtain credentials, it's time to find the user in db (by email), compare received password with the hashed one
     const author = await AuthorsModel.checkCredentials(email, password);
 
-    if (author) {
+    if (author || req.author.role === "Admin") {
       // 4. If credentials are ok, we can proceed to what is next (another middleware or route handler)
       req.author = author;
       next();

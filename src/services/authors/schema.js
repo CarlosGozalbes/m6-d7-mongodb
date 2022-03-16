@@ -4,10 +4,11 @@ const { Schema, model } = mongoose;
 
 const AuthorSchema = new Schema(
   {
-    name: {
+    /* name: {
       firstName: { type: String, required: true },
       lastName: { type: String, required: true },
-    },
+    }, */
+    name: { type: String, required: true},
     avatar: { type: String, required: false },
     email: { type: String, required: true },
     password: { type: String, required: true },
