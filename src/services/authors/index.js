@@ -10,6 +10,7 @@ import { adminOnlyMiddleware } from "../../auth/admin.js";
 import { authenticateAuthor } from "../../auth/tools.js";
 import { JWTAuthMiddleware } from "../../auth/token.js";
 import mongoose from "mongoose";
+import passport from "passport";
 
 let blogPost = mongoose.model("BlogPost");
 
@@ -68,6 +69,35 @@ authorsRouter.post("/register", async (req, res, next) => {
     next(error);
   }
 });
+
+authorsRouter.get(
+  "/googleLogin",
+  passport.authenticate("google", { scope: ["email", "profile"] })
+); // this endpoint will redirect our users to Google Consent Screen
+
+authorsRouter.get(
+  "/googleRedirect",
+  passport.authenticate("google"),
+  (req, res, next) => {
+    try {
+      // passport middleware will receive the response from Google, then we gonna execute the route handler
+      console.log(req.user.token);
+      // res.send({ token: req.user.token })
+
+      if (req.user.role === "Admin") {
+        res.redirect(
+          `${process.env.FE_URL}/admin?accessToken=${req.user.token}`
+        );
+      } else {
+        res.redirect(
+          `${process.env.FE_URL}/profile?accessToken=${req.user.token}`
+        );
+      }
+    } catch (error) {
+      next(error);
+    }
+  }
+);
 
 authorsRouter.get(
   "/",
@@ -157,7 +187,7 @@ authorsRouter.delete(
 );
 
 authorsRouter.post(
-  "/:authorId/avatar",
+  "/:authorId/avatar", JWTAuthMiddleware,
   multer({ storage: cloudinaryStorage }).single("avatar"),
   async (req, res, next) => {
     try {

@@ -8,12 +8,13 @@ const AuthorSchema = new Schema(
       firstName: { type: String, required: true },
       lastName: { type: String, required: true },
     }, */
-    name: { type: String, required: true},
+    name: { type: String, required: true },
+    surname: { type: String, required: true },
     avatar: { type: String, required: false },
-    email: { type: String, required: true },
-    password: { type: String, required: true },
+    email: { type: String, required: true, unique: true },
+    password: { type: String, required: false },
+    googleId: {type: String},
     role: { type: String, enum: ["Author", "Admin"], default: "Author" },
-    
   },
   {
     timestamps: true,

@@ -10,15 +10,19 @@ import {
 } from "./errorHandlers.js";
 import blogPostsRouter from "./services/blogPosts/index.js";
 import authorsRouter from "./services/authors/index.js";
+import passport from "passport";
+import googleStrategy from "./auth/OAuth.js";
 
 const server = express();
 const port = process.env.PORT || 3001;
 
 
+passport.use("google", googleStrategy)
+
 
 server.use(cors());
 server.use(express.json());
-
+server.use(passport.initialize())
 
 
 server.use("/blogPosts", blogPostsRouter);
